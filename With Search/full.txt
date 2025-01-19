@@ -1,0 +1,205 @@
+//form
+
+class UserForm extends StatelessWidget {
+  UserForm({super.key, required this.nameController, required this.emailController, required this.phoneController});
+
+  TextEditingController nameController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("User Form"),),
+      body: 
+      Padding(padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: "Name",
+                hintText: "Enter your name"
+              ),
+            ),
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(
+                labelText: "Email",
+                hintText: "Enter your email"
+              ),
+            ),
+            TextField(
+              controller: phoneController,
+              decoration: InputDecoration(
+                labelText: "Phone",
+                hintText: "Enter your phone"
+              ),),
+            ElevatedButton(
+              onPressed: (){
+                Map<String,dynamic> map = {};
+                map[NAME] = nameController.text;
+                map[EMAIL] = emailController.text;
+                map[PHONE] = phoneController.text;
+                Navigator.pop(context,map);
+                },
+              child: Text("Submit"),
+            )
+          ],
+        ),
+        ),
+      );
+  }
+}
+
+//utils
+const String NAME = 'Name';
+const String EMAIL = 'Email';
+const String PHONE = 'Phone';
+
+//User
+
+class User{
+  List<Map<String,dynamic>> userlist = [];
+  List<Map<String,dynamic>> temp = [];
+  
+  void add(String name,String phone,String email){
+    Map<String,dynamic> map = {};
+    map[NAME] = name;
+    map[PHONE] = phone;
+    map[EMAIL] = email;
+    userlist.add(map);
+  }
+
+  List<Map<String,dynamic>> getUserInList(){
+    return userlist;
+  }
+
+  void deleteUserInList(id){
+    userlist.removeAt(id);
+  }
+
+  void updateUserInList(int id, String name, String phone, String email) {
+    Map<String, dynamic> map = {};
+    map[NAME] = name;
+    map[PHONE] = phone;
+    map[EMAIL] = email;
+    userlist[id] = map;
+  }
+
+  void resetUserList() {
+    userlist = temp;
+  }
+
+  void searchUser(searchData) {
+    List<Map<String,dynamic>> searched = [];
+    temp = userlist;
+    for (var element in userlist) {
+      if (element[NAME]
+              .toString()
+              .toLowerCase()
+              .contains(searchData.toString().toLowerCase())) {
+        searched.add(element);
+      }
+    }
+
+    userlist = searched;
+  }
+}
+
+//ListViewPage
+
+class UserListView extends StatefulWidget {
+  const UserListView({super.key});
+
+  @override
+  State<UserListView> createState() => _UserListViewState();
+}
+
+class _UserListViewState extends State<UserListView> {
+
+  User _user = User();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("User List Demo"),
+        actions: [
+          IconButton(onPressed: (){
+            Navigator.push(context, MaterialPageRoute(
+              builder: (context){
+                return UserForm(
+                  nameController: TextEditingController(),
+                  emailController: TextEditingController(),
+                  phoneController: TextEditingController(),
+                );
+            },
+            )).then((value){
+              if(value != null){
+                _user.userlist.add(value);
+                setState(() {});
+                }
+            });
+          }, icon: Icon(Icons.add))
+        ],
+      ),
+      body: Column(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          _user.userlist.isEmpty
+          ?
+            Expanded(child: Center(child: Text("No User Found")),)
+          :
+        TextField(
+          decoration: InputDecoration(
+            hintText: "Search User",
+            prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onChanged: (value) {
+            setState(() {
+              if (value.isEmpty) {
+          _user.resetUserList();
+              } else {
+          _user.searchUser(value);
+              }
+            });
+          },
+        ),
+        Expanded(
+          child: ListView.builder(
+          itemCount: _user.userlist.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              onTap: () {
+                Navigator.push(context,MaterialPageRoute(
+                    builder: (context) => UserForm(
+                      nameController: TextEditingController(text: _user.userlist[index][NAME]),
+                      emailController: TextEditingController(text: _user.userlist[index][EMAIL]),
+                      phoneController: TextEditingController(text: _user.userlist[index][PHONE]),
+                    ),
+                  ),
+                ).then((value) {
+                  if (value != null) {
+                    _user.updateUserInList(index, value[NAME], value[PHONE], value[EMAIL]);
+                    setState(() {});
+                  }
+                });
+              },
+              title: Text(_user.userlist[index][NAME]),
+              subtitle: Text("${_user.userlist[index][EMAIL]}\n${_user.userlist[index][PHONE]}"),
+              trailing:
+                  IconButton(onPressed: (){
+                    _user.deleteUserInList(index);
+                    setState(() {});
+                  }, icon: Icon(Icons.delete)),
+            );
+          },
+        ))
+        ],
+      ),
+    );
+  }
+}
