@@ -1,0 +1,11 @@
+const String USER_ID = "User_Id";
+const String Name = "name";
+const String Address = "address";
+const String Email = "email";
+const String Mobile = "mobile";
+const String City = "city";
+const String Gender = "gender";
+const String DOB = "dob";
+const String Hobbies = "hobbies";
+const String Password = "password";
+const String Favorite = "favorite";
