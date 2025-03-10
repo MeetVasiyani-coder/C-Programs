@@ -1,3 +1,174 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+void main(){
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: ApiPractice(),
+    )
+  );
+}
+
+class ApiPractice extends StatefulWidget {
+  const ApiPractice({super.key});
+
+  @override
+  State<ApiPractice> createState() => _ApiPracticeState();
+}
+
+class _ApiPracticeState extends State<ApiPractice> {
+
+  static const baseUrl = 'https://67b41a64392f4aa94fa953b7.mockapi.io/Demo';
+
+  List<Map<String,dynamic>> userlist = [];
+  TextEditingController nameController = TextEditingController();
+  TextEditingController cityController = TextEditingController();
+
+  void initState(){
+    super.initState();
+    setState(() {
+      getUsers();
+    });
+  }
+
+  Future<void> getUsers() async{
+    final response = await http.get(Uri.parse(baseUrl));
+    setState(() {
+      List<dynamic> temp = json.decode(response.body);
+      userlist = temp.map((user) => user as Map<String,dynamic>).toList();  
+    });
+  }
+
+  Future<void> addUser(String name,String city) async{
+    final response = await http.post(Uri.parse(baseUrl),body : {
+      "Name" : name,
+      "City" : city
+    });
+
+    getUsers();
+  }
+
+  Future<void> deleteUser(String? id) async{
+    final response = await http.delete(Uri.parse('$baseUrl/$id'));
+    getUsers();
+  }
+
+  Future<void> updateUser(String id,String name,String city) async{
+    final response = await http.put(Uri.parse('$baseUrl/$id'),body : {
+      "Name" : name,
+      "City": city
+    });
+
+    getUsers();
+  }
+
+  void clearControllers(){
+    nameController.clear();
+    cityController.clear();
+  }
+
+  Future<dynamic> showBottomSheet(String? id) async{
+    return showModalBottomSheet(context: context, builder: (context) {
+      return Column(
+        children: [
+          TextFormField(
+            controller: nameController,
+            decoration: InputDecoration(
+              labelText: "Name"
+            ),
+          ),
+
+          TextFormField(
+            controller: cityController,
+            decoration: InputDecoration(
+              labelText: "City"
+            ),
+          ),
+
+          ElevatedButton(onPressed: (){
+            if(id != null){
+              updateUser(id, nameController.text, cityController.text).then((value) {
+                Navigator.pop(context);
+                setState(() {
+                  clearControllers();
+                  getUsers();
+                });
+              },);
+            }
+            else{
+              addUser(nameController.text, cityController.text).then((value) {
+                Navigator.pop(context);
+                setState(() {
+                  clearControllers();
+                  getUsers();
+                });
+              },);
+            }
+          }, child: Text("Save"))
+        ],
+      );
+    },).whenComplete(() {
+          clearControllers();
+          getUsers();
+    },);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("CRUD"),
+        actions: [
+          IconButton(onPressed:() {
+            showBottomSheet(null).then((value) {
+              setState(() {
+                getUsers();
+              });
+            },);
+          }, icon: Icon(Icons.add))
+        ],
+      ),
+
+      body: ListView.builder(itemCount: userlist.length,itemBuilder: (context, index) {
+        return ListTile(
+          title: Text(userlist[index]['Name']),
+          subtitle: Text(userlist[index]['City']),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+
+              IconButton(onPressed: () {
+                nameController.text = userlist[index]['Name'];
+                cityController.text = userlist[index]['City'];
+                showBottomSheet(userlist[index]['id']).then((value) {
+                  setState(() {
+                    getUsers();
+                  });
+                },);
+              }, icon: Icon(Icons.edit)),
+
+              IconButton(onPressed: () {
+                deleteUser(userlist[index]['id']).then((value) {
+                  setState(() {
+                    getUsers();
+                  });
+                },);
+              }, icon: Icon(Icons.delete)),
+
+            ],
+          ),
+        );
+      },)
+
+    );
+  }
+}
+
+/*
+
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -230,6 +401,8 @@ class _DatabaseFinalPracticeState extends State<DatabaseFinalPractice> {
     );
   }
 }
+
+*/
 
 /*
 import 'package:flutter/material.dart';
